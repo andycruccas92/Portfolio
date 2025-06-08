@@ -1,0 +1,9 @@
+Creative Commons Attribution-NonCommercial 4.0 International Public License
+
+By exercising the Licensed Rights (defined below), You accept and agree to be bound by the terms and conditions of this Creative Commons Attribution-NonCommercial 4.0 International Public License ("Public License").
+
+...
+
+You may not exercise any of the rights granted to You in this Public License in any manner that is primarily intended for or directed toward commercial advantage or monetary compensation. The Licensor grants You the rights contained here in consideration of Your acceptance of these terms and conditions.
+
+Full legal code: https://creativecommons.org/licenses/by-nc/4.0/legalcode

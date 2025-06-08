@@ -11,7 +11,7 @@ Questa cartella documenta in formato **BPMN 2.0** i principali flussi operativi 
 | `Mappatura LaPaciarina I lavorazione.bpmn` | Processo dalla legna in piedi fino alla selezione e vendita assortimenti |
 | `Mappatura LaPaciarina II lavorazione.bpmn` | Macro-processo di trasformazione: segagione, essicazione, cernita |
 | `Mappatura LaPaciarina III lavorazione.bpmn` | Produzione su misura, restauro, prototipazione, consegna |
-| `pianificazione taglio.bpmn` | Sottoprocesso richiamato da Call Activity – include KPI e gateway decisionali |
+| `pianificazione taglio.bpmn` | Sottoprocesso richiamato da Call Activity – include gateway decisionali |
 
 ---
 

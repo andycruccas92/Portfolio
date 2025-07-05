@@ -82,4 +82,58 @@ Il BABOK è il framework di riferimento per la **Business Analysis professionale
 
 ## 🧮 Core Concepts (BACCM)
 
-> Business Analysis
+> Business Analysis Core Concept Model (BACCM)
+
+- **Change:** Atto di trasformazione
+- **Need:** Problema o opportunità da affrontare
+- **Solution:** Risposta proposta
+- **Stakeholder:** Parte coinvolta/interessata
+- **Value:** Beneficio misurabile
+- **Context:** Ambiente circostante
+
+---
+
+## 🧠 Underlying Competencies
+
+Competenze trasversali richieste a un BA efficace:
+- Pensiero analitico e critico
+- Comunicazione verbale e scritta
+- Leadership e influenza
+- Abilità tecniche (es. modellazione, strumenti software)
+- Etica professionale
+
+---
+
+## 🛠️ Techniques (50+)
+
+Esempi:
+- SWOT Analysis
+- Process Modeling (BPMN, UML)
+- Use Cases / Scenarios
+- Wireframes
+- Decision Analysis
+- Benchmarking
+- Root Cause Analysis
+- Personas
+- User Stories
+
+---
+
+## 🧷 Perspectives (Contesti di applicazione)
+
+- Agile
+- Business Intelligence
+- IT
+- Business Architecture
+- Business Process Management
+
+---
+
+## ✅ Conclusione
+
+Il BABOK fornisce una struttura completa per:
+
+- Scoprire, definire e gestire esigenze di business
+- Allineare stakeholder e soluzioni
+- Valutare il valore apportato dai cambiamenti
+- Adattarsi a diversi contesti (agile, waterfall, ibrido)

@@ -1,8 +1,0 @@
-ID,Titolo,Descrizione,Stato,Priorità,Etichetta
-1,Creazione README completo,Scrivere e caricare README con struttura completa,Done,Alta,Documentazione
-2,Setup cartelle repository,"Creare struttura con templates, BPMN, one-off",Done,Alta,Struttura
-3,Caricamento template analisi,Inserire i file base per analisi di processo,To Do,Alta,Template
-4,Inserimento BPMN,Aggiungere i diagrammi BPMN dell’esperienza precedente,To Do,Media,BPMN
-5,Documentare progetti one-off,Caricare documentazione completa per 5 casi studio,To Do,Alta,Progetti
-6,Scrivere White Paper,Redigere e inserire i white paper e case study,To Do,Media,Elaborati
-7,Creare Kanban board online,Collegare la board a GitHub Project o Trello,To Do,Media,Kanban

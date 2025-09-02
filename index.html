@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Portfolio di Andy Cruccas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-neutral-950 text-neutral-100 min-h-screen">
+  <main class="max-w-4xl mx-auto py-12 px-4">
+    <h1 class="text-4xl font-bold mb-8">Portfolio</h1>
+    <p class="text-neutral-400 mb-12">Seleziona una sezione per visualizzare i documenti.</p>
+    <div id="dirs" class="grid md:grid-cols-2 gap-6"></div>
+  </main>
+  <script>
+    const DIRECTORIES = [
+      { title: "White Papers", desc: "Documenti strategici e analitici", path: "docs/white-papers/" },
+      { title: "Executive Notes", desc: "Note di sintesi per manager e investitori", path: "docs/executive/" },
+      { title: "Infografiche", desc: "Visualizzazioni e schemi riassuntivi", path: "docs/infografiche/" },
+      { title: "KPI & Metriche", desc: "Tabelle e indicatori di performance", path: "docs/kpi/" },
+    ];
+    const c = document.getElementById("dirs");
+    DIRECTORIES.forEach(dir => {
+      const card = document.createElement("div");
+      card.className = "rounded-2xl border border-neutral-800 p-6 bg-neutral-900 hover:border-neutral-600";
+      card.innerHTML = `
+        <h2 class="text-xl font-semibold mb-2">${dir.title}</h2>
+        <p class="text-neutral-400 text-sm mb-4">${dir.desc}</p>
+        <a href="${dir.path}" class="inline-block px-4 py-2 rounded-xl bg-white text-neutral-900 font-medium text-sm">Apri cartella</a>
+      `;
+      c.appendChild(card);
+    });
+  </script>
+</body>
+</html>

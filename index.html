@@ -5,20 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Portfolio — White Papers & Templates</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
-  </style>
+  <style>.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style>
 </head>
 <body class="bg-neutral-950 text-neutral-100 min-h-screen">
   <main class="max-w-5xl mx-auto py-10 px-4">
     <header class="mb-10">
       <h1 class="text-3xl md:text-4xl font-bold">Portfolio</h1>
-      <p class="text-neutral-400 mt-2">Questa pagina legge i file direttamente dalla repository.</p>
+      <p class="text-neutral-400 mt-2">File letti in tempo reale dalla repository:</p>
       <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
-        <span class="text-neutral-400">Branch sorgente:</span>
+        <span class="text-neutral-400">Branch:</span>
         <select id="branchSel" class="bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2">
-          <option value="case_study_whitepapers">case_study_whitepapers</option>
           <option value="main">main</option>
+          <option value="case_study_whitepapers" selected>case_study_whitepapers</option>
         </select>
         <button id="reloadBtn" class="px-3 py-2 rounded-lg bg-white text-neutral-900">Ricarica</button>
         <span id="status" class="text-neutral-400"></span>
@@ -27,16 +25,16 @@
 
     <section id="whitepapers" class="mb-12">
       <h2 class="text-2xl font-semibold">White Papers</h2>
-      <p class="text-neutral-400 text-sm mt-1">File letti dal branch selezionato.</p>
+      <p class="text-neutral-400 text-sm mt-1">Ricerca in <code>case_study_whitepapers</code> (fallback: <code>white-papers</code>, root).</p>
       <div id="wpList" class="mt-5 grid md:grid-cols-2 gap-4"></div>
-      <div id="wpEmpty" class="mt-4 text-neutral-500 hidden">Nessun file trovato nelle cartelle configurate.</div>
+      <div id="wpEmpty" class="mt-4 text-neutral-500 hidden">Nessun file trovato.</div>
     </section>
 
     <section id="templates" class="mb-12">
       <h2 class="text-2xl font-semibold">Templates</h2>
-      <p class="text-neutral-400 text-sm mt-1">File letti dal branch selezionato.</p>
+      <p class="text-neutral-400 text-sm mt-1">Ricerca in <code>case_study_whitepapers</code> (fallback: <code>templates</code>/<code>Templates</code>, <code>kpi</code>, root).</p>
       <div id="tplList" class="mt-5 grid md:grid-cols-2 gap-4"></div>
-      <div id="tplEmpty" class="mt-4 text-neutral-500 hidden">Nessun file trovato nelle cartelle configurate.</div>
+      <div id="tplEmpty" class="mt-4 text-neutral-500 hidden">Nessun file trovato.</div>
     </section>
 
     <section id="debug" class="mt-12">
@@ -48,30 +46,30 @@
   </main>
 
   <script>
-    // ======= CONFIGURAZIONE =======
     const OWNER = "andycruccas92";
     const REPO  = "Portfolio";
+    const DEFAULT_BRANCH = "case_study_whitepapers";
 
-    // Cartelle da scandire per ogni sezione (in ordine di priorità).
-    // Le API GitHub: GET /repos/:owner/:repo/contents/:path?ref=:branch
     const GROUPS = [
       {
         key: "wp",
         title: "White Papers",
-        // prova più percorsi: adattali se i file stanno altrove
-        paths: ["docs/white-papers", "white-papers", ""],
-        // estensioni mostrate
+        // priorità: sotto-cartelle prevedibili > cartella tema > root (limitata)
+        paths: ["case_study_whitepapers", "white-papers"],
         exts: ["pdf","docx","doc","md"],
         targetEl: "wpList",
-        emptyEl: "wpEmpty"
+        emptyEl: "wpEmpty",
+        classifier: (f) => true // tutto ciò che matcha exts va qui
       },
       {
         key: "tpl",
         title: "Templates",
-        paths: ["docs/templates", "templates", "docs/kpi", "kpi", ""],
+        // includo anche duplicati di case nelle maiuscole per robustezza
+        paths: ["case_study_whitepapers", "templates", "Templates", "kpi"],
         exts: ["xlsx","xls","csv","pptx","docx","md","pdf"],
         targetEl: "tplList",
-        emptyEl: "tplEmpty"
+        emptyEl: "tplEmpty",
+        classifier: (f) => true
       }
     ];
 
@@ -80,29 +78,47 @@
     const branchSel= document.getElementById("branchSel");
     const reloadBtn= document.getElementById("reloadBtn");
 
+    branchSel.value = DEFAULT_BRANCH;
     reloadBtn.addEventListener("click", () => loadAll(branchSel.value));
     branchSel.addEventListener("change", () => loadAll(branchSel.value));
-
-    async function ghList(path, ref) {
-      const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`;
-      const res = await fetch(url);
-      if (res.status === 404) return { path, items: [], ok: true, status: 404 };
-      const data = await res.json();
-      return { path, items: Array.isArray(data) ? data : [], ok: res.ok, status: res.status };
-    }
 
     function extOf(name) {
       const i = name.lastIndexOf(".");
       return i >= 0 ? name.slice(i+1).toLowerCase() : "";
     }
 
+    async function ghList(path, ref) {
+      const base = `https://api.github.com/repos/${OWNER}/${REPO}/contents`;
+      const url = path ? `${base}/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}` : `${base}?ref=${encodeURIComponent(ref)}`;
+      const res = await fetch(url);
+      if (res.status === 404) return { path: path || "<root>", items: [], ok: true, status: 404 };
+      const data = await res.json();
+      return { path: path || "<root>", items: Array.isArray(data) ? data : [], ok: res.ok, status: res.status };
+    }
+
+    async function listRecursive(startPath, ref, filterExts) {
+      const stack = [startPath];
+      const out = [];
+      while (stack.length) {
+        const p = stack.pop();
+        const res = await ghList(p, ref);
+        if (!res.ok && res.status !== 404) continue;
+        for (const it of res.items) {
+          if (it.type === "dir") stack.push((p ? p + "/" : "") + it.name);
+          if (it.type === "file" && filterExts.includes(extOf(it.name))) {
+            out.push({ name: it.name, path: (p ? p + "/" : "") + it.name });
+          }
+        }
+      }
+      return out;
+    }
+
     function card(file, ref) {
       const raw = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${encodeURIComponent(ref)}/${file.path}`;
       const blob = `https://github.com/${OWNER}/${REPO}/blob/${encodeURIComponent(ref)}/${file.path}`;
-      const icon = "📄";
       return `
         <article class="rounded-2xl border border-neutral-800 p-5 bg-neutral-900 hover:border-neutral-600">
-          <h3 class="font-medium text-white">${icon} ${file.name}</h3>
+          <h3 class="font-medium text-white">📄 ${file.name}</h3>
           <p class="text-xs text-neutral-400 mt-1">${file.path}</p>
           <div class="mt-3 flex gap-2">
             <a class="px-3 py-1 rounded-lg bg-white text-neutral-900 text-sm" href="${raw}" target="_blank" rel="noreferrer">Apri/Scarica</a>
@@ -119,30 +135,37 @@
       empty.classList.add("hidden");
 
       let found = [];
-      let debugLines = [];
+      let logs = [];
 
-      for (const p of group.paths) {
-        if (p === "") continue; // evita root senza filtro: troppo rumoroso
+      for (const basePath of group.paths) {
         try {
-          const res = await ghList(p, ref);
-          debugLines.push(`GET ${p}@${ref} -> ${res.status} (${res.items.length} items)`);
-          const files = res.items.filter(x => x.type === "file" && group.exts.includes(extOf(x.name)));
-          found = found.concat(files.map(f => ({...f, path: p + "/" + f.name})));
+          const items = await listRecursive(basePath, ref, group.exts);
+          logs.push(`SCAN ${basePath || "<root>"}@${ref} -> ${items.length} file`);
+          found = found.concat(items.filter(group.classifier));
         } catch (e) {
-          debugLines.push(`ERR ${p}@${ref}: ${e && e.message ? e.message : e}`);
+          logs.push(`ERR ${basePath}@${ref}: ${e && e.message ? e.message : e}`);
         }
       }
 
-      if (found.length === 0) {
+      // dedup per path
+      const uniq = [];
+      const seen = new Set();
+      for (const f of found) {
+        if (seen.has(f.path)) continue;
+        seen.add(f.path);
+        uniq.push(f);
+      }
+
+      if (uniq.length === 0) {
         empty.classList.remove("hidden");
       } else {
-        target.innerHTML = found
+        target.innerHTML = uniq
           .sort((a,b)=> a.name.localeCompare(b.name))
           .map(f => card(f, ref))
           .join("");
       }
 
-      return debugLines.join("\n");
+      return logs.join("\n");
     }
 
     async function loadAll(ref) {
@@ -161,3 +184,4 @@
   </script>
 </body>
 </html>
+

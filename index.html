@@ -3,33 +3,161 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Portfolio di Andy Cruccas</title>
+  <title>Portfolio — White Papers & Templates</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+  </style>
 </head>
 <body class="bg-neutral-950 text-neutral-100 min-h-screen">
-  <main class="max-w-4xl mx-auto py-12 px-4">
-    <h1 class="text-4xl font-bold mb-8">Portfolio</h1>
-    <p class="text-neutral-400 mb-12">Seleziona una sezione per visualizzare i documenti.</p>
-    <div id="dirs" class="grid md:grid-cols-2 gap-6"></div>
+  <main class="max-w-5xl mx-auto py-10 px-4">
+    <header class="mb-10">
+      <h1 class="text-3xl md:text-4xl font-bold">Portfolio</h1>
+      <p class="text-neutral-400 mt-2">Questa pagina legge i file direttamente dalla repository.</p>
+      <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
+        <span class="text-neutral-400">Branch sorgente:</span>
+        <select id="branchSel" class="bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2">
+          <option value="case_study_whitepapers">case_study_whitepapers</option>
+          <option value="main">main</option>
+        </select>
+        <button id="reloadBtn" class="px-3 py-2 rounded-lg bg-white text-neutral-900">Ricarica</button>
+        <span id="status" class="text-neutral-400"></span>
+      </div>
+    </header>
+
+    <section id="whitepapers" class="mb-12">
+      <h2 class="text-2xl font-semibold">White Papers</h2>
+      <p class="text-neutral-400 text-sm mt-1">File letti dal branch selezionato.</p>
+      <div id="wpList" class="mt-5 grid md:grid-cols-2 gap-4"></div>
+      <div id="wpEmpty" class="mt-4 text-neutral-500 hidden">Nessun file trovato nelle cartelle configurate.</div>
+    </section>
+
+    <section id="templates" class="mb-12">
+      <h2 class="text-2xl font-semibold">Templates</h2>
+      <p class="text-neutral-400 text-sm mt-1">File letti dal branch selezionato.</p>
+      <div id="tplList" class="mt-5 grid md:grid-cols-2 gap-4"></div>
+      <div id="tplEmpty" class="mt-4 text-neutral-500 hidden">Nessun file trovato nelle cartelle configurate.</div>
+    </section>
+
+    <section id="debug" class="mt-12">
+      <details class="bg-neutral-900/50 border border-neutral-800 rounded-xl p-4">
+        <summary class="cursor-pointer text-sm text-neutral-400">Diagnostica</summary>
+        <pre id="debugOut" class="mt-3 text-xs text-neutral-300 whitespace-pre-wrap"></pre>
+      </details>
+    </section>
   </main>
+
   <script>
-    const DIRECTORIES = [
-      { title: "White Papers", desc: "Documenti strategici e analitici", path: "docs/white-papers/" },
-      { title: "Executive Notes", desc: "Note di sintesi per manager e investitori", path: "docs/executive/" },
-      { title: "Infografiche", desc: "Visualizzazioni e schemi riassuntivi", path: "docs/infografiche/" },
-      { title: "KPI & Metriche", desc: "Tabelle e indicatori di performance", path: "docs/kpi/" },
+    // ======= CONFIGURAZIONE =======
+    const OWNER = "andycruccas92";
+    const REPO  = "Portfolio";
+
+    // Cartelle da scandire per ogni sezione (in ordine di priorità).
+    // Le API GitHub: GET /repos/:owner/:repo/contents/:path?ref=:branch
+    const GROUPS = [
+      {
+        key: "wp",
+        title: "White Papers",
+        // prova più percorsi: adattali se i file stanno altrove
+        paths: ["docs/white-papers", "white-papers", ""],
+        // estensioni mostrate
+        exts: ["pdf","docx","doc","md"],
+        targetEl: "wpList",
+        emptyEl: "wpEmpty"
+      },
+      {
+        key: "tpl",
+        title: "Templates",
+        paths: ["docs/templates", "templates", "docs/kpi", "kpi", ""],
+        exts: ["xlsx","xls","csv","pptx","docx","md","pdf"],
+        targetEl: "tplList",
+        emptyEl: "tplEmpty"
+      }
     ];
-    const c = document.getElementById("dirs");
-    DIRECTORIES.forEach(dir => {
-      const card = document.createElement("div");
-      card.className = "rounded-2xl border border-neutral-800 p-6 bg-neutral-900 hover:border-neutral-600";
-      card.innerHTML = `
-        <h2 class="text-xl font-semibold mb-2">${dir.title}</h2>
-        <p class="text-neutral-400 text-sm mb-4">${dir.desc}</p>
-        <a href="${dir.path}" class="inline-block px-4 py-2 rounded-xl bg-white text-neutral-900 font-medium text-sm">Apri cartella</a>
+
+    const statusEl = document.getElementById("status");
+    const debugEl  = document.getElementById("debugOut");
+    const branchSel= document.getElementById("branchSel");
+    const reloadBtn= document.getElementById("reloadBtn");
+
+    reloadBtn.addEventListener("click", () => loadAll(branchSel.value));
+    branchSel.addEventListener("change", () => loadAll(branchSel.value));
+
+    async function ghList(path, ref) {
+      const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`;
+      const res = await fetch(url);
+      if (res.status === 404) return { path, items: [], ok: true, status: 404 };
+      const data = await res.json();
+      return { path, items: Array.isArray(data) ? data : [], ok: res.ok, status: res.status };
+    }
+
+    function extOf(name) {
+      const i = name.lastIndexOf(".");
+      return i >= 0 ? name.slice(i+1).toLowerCase() : "";
+    }
+
+    function card(file, ref) {
+      const raw = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${encodeURIComponent(ref)}/${file.path}`;
+      const blob = `https://github.com/${OWNER}/${REPO}/blob/${encodeURIComponent(ref)}/${file.path}`;
+      const icon = "📄";
+      return `
+        <article class="rounded-2xl border border-neutral-800 p-5 bg-neutral-900 hover:border-neutral-600">
+          <h3 class="font-medium text-white">${icon} ${file.name}</h3>
+          <p class="text-xs text-neutral-400 mt-1">${file.path}</p>
+          <div class="mt-3 flex gap-2">
+            <a class="px-3 py-1 rounded-lg bg-white text-neutral-900 text-sm" href="${raw}" target="_blank" rel="noreferrer">Apri/Scarica</a>
+            <a class="px-3 py-1 rounded-lg border border-neutral-700 text-sm" href="${blob}" target="_blank" rel="noreferrer">Vedi su GitHub</a>
+          </div>
+        </article>
       `;
-      c.appendChild(card);
-    });
+    }
+
+    async function loadGroup(group, ref) {
+      const target = document.getElementById(group.targetEl);
+      const empty  = document.getElementById(group.emptyEl);
+      target.innerHTML = "";
+      empty.classList.add("hidden");
+
+      let found = [];
+      let debugLines = [];
+
+      for (const p of group.paths) {
+        if (p === "") continue; // evita root senza filtro: troppo rumoroso
+        try {
+          const res = await ghList(p, ref);
+          debugLines.push(`GET ${p}@${ref} -> ${res.status} (${res.items.length} items)`);
+          const files = res.items.filter(x => x.type === "file" && group.exts.includes(extOf(x.name)));
+          found = found.concat(files.map(f => ({...f, path: p + "/" + f.name})));
+        } catch (e) {
+          debugLines.push(`ERR ${p}@${ref}: ${e && e.message ? e.message : e}`);
+        }
+      }
+
+      if (found.length === 0) {
+        empty.classList.remove("hidden");
+      } else {
+        target.innerHTML = found
+          .sort((a,b)=> a.name.localeCompare(b.name))
+          .map(f => card(f, ref))
+          .join("");
+      }
+
+      return debugLines.join("\n");
+    }
+
+    async function loadAll(ref) {
+      statusEl.textContent = "Caricamento…";
+      debugEl.textContent = "";
+      const logs = [];
+      for (const g of GROUPS) {
+        const l = await loadGroup(g, ref);
+        logs.push(`== ${g.title} ==\n${l}\n`);
+      }
+      statusEl.textContent = "Fatto.";
+      debugEl.textContent = logs.join("\n");
+    }
+
+    loadAll(branchSel.value);
   </script>
 </body>
 </html>

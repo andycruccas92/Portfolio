@@ -46,7 +46,7 @@ Questo spazio nasce per:
 
 ## 📬 Contatti
 
-- **LinkedIn**: [linkedin.com/in/andycruccas92](https://www.linkedin.com/in/andycruccas92/)  
+- **LinkedIn**: [linkedin.com/in/andycruccas92](www.linkedin.com/in/andy-cruccas)  
 - **GitHub Pages (Portfolio Live)**: [andycruccas92.github.io/Portfolio](https://andycruccas92.github.io/Portfolio/)  
 
 ---

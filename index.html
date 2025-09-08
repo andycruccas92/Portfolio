@@ -2,48 +2,109 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
+  <meta name="color-scheme" content="dark">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Portfolio — White Papers & Templates</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style>
+  <style>
+    .spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+    .fade-in{animation:fade .35s ease-out}@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+    .glass{background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); backdrop-filter: blur(8px)}
+    .grid-auto{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+  </style>
 </head>
 <body class="bg-neutral-950 text-neutral-100 min-h-screen">
-  <main class="max-w-5xl mx-auto py-10 px-4">
-    <header class="mb-10">
-      <h1 class="text-3xl md:text-4xl font-bold">Portfolio</h1>
-      <p class="text-neutral-400 mt-2">File letti in tempo reale dalla repository:</p>
-      <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
-        <span class="text-neutral-400">Branch:</span>
-        <select id="branchSel" class="bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2">
-          <option value="main">main</option>
-          <option value="case_study_whitepapers" selected>case_study_whitepapers</option>
-        </select>
-        <button id="reloadBtn" class="px-3 py-2 rounded-lg bg-white text-neutral-900">Ricarica</button>
-        <span id="status" class="text-neutral-400"></span>
+  <!-- NAV -->
+  <header class="sticky top-0 z-50 border-b border-neutral-900/70 bg-neutral-950/70 backdrop-blur">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-xl grid place-items-center bg-neutral-900 border border-neutral-800 text-sm font-bold">AC</div>
+        <div>
+          <div class="text-sm tracking-widest uppercase text-neutral-400">Portfolio</div>
+          <div class="text-xs text-neutral-500">Live via GitHub API</div>
+        </div>
       </div>
-    </header>
+      <a href="https://github.com/andycruccas92/Portfolio" class="text-sm text-neutral-400 hover:text-white">Repo</a>
+    </div>
+  </header>
 
-    <section id="whitepapers" class="mb-12">
-      <h2 class="text-2xl font-semibold">White Papers</h2>
-      <p class="text-neutral-400 text-sm mt-1">Ricerca in <code>case_study_whitepapers</code> (fallback: <code>white-papers</code>, root).</p>
-      <div id="wpList" class="mt-5 grid md:grid-cols-2 gap-4"></div>
+  <!-- HERO -->
+  <section class="relative">
+    <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
+      <div class="h-48 bg-gradient-to-b from-fuchsia-500/10 via-sky-500/5 to-transparent blur-2xl"></div>
+    </div>
+    <div class="max-w-6xl mx-auto px-4 pt-10 pb-6">
+      <h1 class="text-3xl md:text-4xl font-semibold">White Papers & Templates</h1>
+      <p class="text-neutral-400 mt-2 max-w-2xl">
+        Seleziona il <span class="font-medium text-neutral-200">branch</span>, filtra e cerca. La lista è generata in tempo reale interrogando la repository.
+      </p>
+
+      <div class="mt-6 grid md:grid-cols-[1fr_auto_auto] gap-3 items-center">
+        <div class="flex rounded-2xl border border-neutral-800 bg-neutral-900/60">
+          <input id="search" placeholder="Cerca per nome…" class="w-full bg-transparent px-4 py-2.5 text-sm outline-none" />
+          <button id="clearSearch" class="px-3 text-neutral-500 hover:text-neutral-200">✕</button>
+        </div>
+
+        <div class="flex items-center gap-2 glass rounded-2xl border border-neutral-800 px-3 py-2">
+          <span class="text-xs text-neutral-400">Estensioni</span>
+          <label class="text-xs flex items-center gap-1"><input type="checkbox" class="filter-ext" value="pdf" checked>pdf</label>
+          <label class="text-xs flex items-center gap-1"><input type="checkbox" class="filter-ext" value="docx" checked>docx</label>
+          <label class="text-xs flex items-center gap-1"><input type="checkbox" class="filter-ext" value="md" checked>md</label>
+          <label class="text-xs flex items-center gap-1"><input type="checkbox" class="filter-ext" value="xlsx" checked>xlsx</label>
+          <label class="text-xs flex items-center gap-1"><input type="checkbox" class="filter-ext" value="csv" checked>csv</label>
+          <label class="text-xs flex items-center gap-1"><input type="checkbox" class="filter-ext" value="pptx" checked>pptx</label>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <select id="branchSel" class="bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm">
+            <option value="case_study_whitepapers" selected>case_study_whitepapers</option>
+            <option value="main">main</option>
+          </select>
+          <button id="reloadBtn" class="px-3 py-2 rounded-xl bg-white text-neutral-900 text-sm">Ricarica</button>
+        </div>
+      </div>
+      <div id="status" class="mt-2 text-xs text-neutral-500">Pronto.</div>
+    </div>
+  </section>
+
+  <!-- CONTENT -->
+  <main class="max-w-6xl mx-auto px-4 pb-12">
+    <!-- White Papers -->
+    <section class="mt-8">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold">White Papers</h2>
+        <div class="text-xs text-neutral-500">Percorsi: <code>case_study_whitepapers</code>, <code>white-papers</code></div>
+      </div>
+      <div id="wpList" class="mt-4 grid-auto"></div>
       <div id="wpEmpty" class="mt-4 text-neutral-500 hidden">Nessun file trovato.</div>
     </section>
 
-    <section id="templates" class="mb-12">
-      <h2 class="text-2xl font-semibold">Templates</h2>
-      <p class="text-neutral-400 text-sm mt-1">Ricerca in <code>case_study_whitepapers</code> (fallback: <code>templates</code>/<code>Templates</code>, <code>kpi</code>, root).</p>
-      <div id="tplList" class="mt-5 grid md:grid-cols-2 gap-4"></div>
+    <!-- Templates -->
+    <section class="mt-10">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold">Templates</h2>
+        <div class="text-xs text-neutral-500">Percorsi: <code>case_study_whitepapers</code>, <code>templates</code>/<code>Templates</code>, <code>kpi</code></div>
+      </div>
+      <div id="tplList" class="mt-4 grid-auto"></div>
       <div id="tplEmpty" class="mt-4 text-neutral-500 hidden">Nessun file trovato.</div>
     </section>
 
-    <section id="debug" class="mt-12">
-      <details class="bg-neutral-900/50 border border-neutral-800 rounded-xl p-4">
-        <summary class="cursor-pointer text-sm text-neutral-400">Diagnostica</summary>
+    <!-- Debug -->
+    <section class="mt-10">
+      <details class="glass border border-neutral-800 rounded-2xl p-4">
+        <summary class="cursor-pointer text-sm text-neutral-300">Diagnostica</summary>
         <pre id="debugOut" class="mt-3 text-xs text-neutral-300 whitespace-pre-wrap"></pre>
       </details>
     </section>
   </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-neutral-900">
+    <div class="max-w-6xl mx-auto px-4 py-8 text-sm text-neutral-500 flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
+      <div>© <span id="y"></span> Andy Cruccas · Portfolio</div>
+      <a class="hover:text-neutral-300" href="https://github.com/andycruccas92/Portfolio">Apri su GitHub</a>
+    </div>
+  </footer>
 
   <script>
     const OWNER = "andycruccas92";
@@ -51,137 +112,113 @@
     const DEFAULT_BRANCH = "case_study_whitepapers";
 
     const GROUPS = [
-      {
-        key: "wp",
-        title: "White Papers",
-        // priorità: sotto-cartelle prevedibili > cartella tema > root (limitata)
-        paths: ["case_study_whitepapers", "white-papers"],
-        exts: ["pdf","docx","doc","md"],
-        targetEl: "wpList",
-        emptyEl: "wpEmpty",
-        classifier: (f) => true // tutto ciò che matcha exts va qui
-      },
-      {
-        key: "tpl",
-        title: "Templates",
-        // includo anche duplicati di case nelle maiuscole per robustezza
-        paths: ["case_study_whitepapers", "templates", "Templates", "kpi"],
-        exts: ["xlsx","xls","csv","pptx","docx","md","pdf"],
-        targetEl: "tplList",
-        emptyEl: "tplEmpty",
-        classifier: (f) => true
-      }
+      { key:"wp", title:"White Papers", paths:["case_study_whitepapers","white-papers"], exts:["pdf","docx","doc","md"], targetEl:"wpList", emptyEl:"wpEmpty" },
+      { key:"tpl", title:"Templates", paths:["case_study_whitepapers","templates","Templates","kpi"], exts:["xlsx","xls","csv","pptx","docx","md","pdf"], targetEl:"tplList", emptyEl:"tplEmpty" }
     ];
 
-    const statusEl = document.getElementById("status");
-    const debugEl  = document.getElementById("debugOut");
-    const branchSel= document.getElementById("branchSel");
-    const reloadBtn= document.getElementById("reloadBtn");
+    const el = (id)=>document.getElementById(id);
+    const statusEl=el("status"), debugEl=el("debugOut"), branchSel=el("branchSel"), reloadBtn=el("reloadBtn");
+    const searchEl=el("search"), clearSearchEl=el("clearSearch");
+    document.getElementById("y").textContent = new Date().getFullYear();
 
-    branchSel.value = DEFAULT_BRANCH;
-    reloadBtn.addEventListener("click", () => loadAll(branchSel.value));
-    branchSel.addEventListener("change", () => loadAll(branchSel.value));
-
-    function extOf(name) {
-      const i = name.lastIndexOf(".");
-      return i >= 0 ? name.slice(i+1).toLowerCase() : "";
+    function extOf(n){const i=n.lastIndexOf(".");return i>=0?n.slice(i+1).toLowerCase():"";}
+    function card(f, ref){
+      const raw  = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${encodeURIComponent(ref)}/${f.path}`;
+      const blob = `https://github.com/${OWNER}/${REPO}/blob/${encodeURIComponent(ref)}/${f.path}`;
+      return `<article class="glass fade-in rounded-2xl border border-neutral-800 p-5">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h3 class="font-medium text-white">${f.icon||"📄"} ${f.name}</h3>
+            <p class="text-[11px] text-neutral-400 mt-1">${f.path}</p>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full border border-neutral-700 text-neutral-300">${extOf(f.name)}</span>
+        </div>
+        <div class="mt-4 flex gap-2">
+          <a class="px-3 py-1 rounded-lg bg-white text-neutral-900 text-sm" href="${raw}" target="_blank" rel="noreferrer">Apri/Scarica</a>
+          <a class="px-3 py-1 rounded-lg border border-neutral-700 text-sm" href="${blob}" target="_blank" rel="noreferrer">Vedi su GitHub</a>
+        </div>
+      </article>`;
     }
 
-    async function ghList(path, ref) {
-      const base = `https://api.github.com/repos/${OWNER}/${REPO}/contents`;
+    async function ghList(path, ref){
+      const base=`https://api.github.com/repos/${OWNER}/${REPO}/contents`;
       const url = path ? `${base}/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}` : `${base}?ref=${encodeURIComponent(ref)}`;
       const res = await fetch(url);
-      if (res.status === 404) return { path: path || "<root>", items: [], ok: true, status: 404 };
+      if(res.status===404) return { path: path||"<root>", items: [], ok:true, status:404 };
       const data = await res.json();
-      return { path: path || "<root>", items: Array.isArray(data) ? data : [], ok: res.ok, status: res.status };
+      return { path: path||"<root>", items: Array.isArray(data)?data:[], ok: res.ok, status:res.status };
     }
 
-    async function listRecursive(startPath, ref, filterExts) {
-      const stack = [startPath];
-      const out = [];
-      while (stack.length) {
-        const p = stack.pop();
-        const res = await ghList(p, ref);
-        if (!res.ok && res.status !== 404) continue;
-        for (const it of res.items) {
-          if (it.type === "dir") stack.push((p ? p + "/" : "") + it.name);
-          if (it.type === "file" && filterExts.includes(extOf(it.name))) {
-            out.push({ name: it.name, path: (p ? p + "/" : "") + it.name });
+    async function listRecursive(startPath, ref, filterExts){
+      const stack=[startPath], out=[];
+      while(stack.length){
+        const p=stack.pop();
+        const r=await ghList(p, ref);
+        if(!r.ok && r.status!==404) continue;
+        for(const it of r.items){
+          if(it.type==="dir") stack.push((p?p+"/":"")+it.name);
+          if(it.type==="file" && filterExts.includes(extOf(it.name))){
+            out.push({ name: it.name, path: (p?p+"/":"")+it.name });
           }
         }
       }
       return out;
     }
 
-    function card(file, ref) {
-      const raw = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${encodeURIComponent(ref)}/${file.path}`;
-      const blob = `https://github.com/${OWNER}/${REPO}/blob/${encodeURIComponent(ref)}/${file.path}`;
-      return `
-        <article class="rounded-2xl border border-neutral-800 p-5 bg-neutral-900 hover:border-neutral-600">
-          <h3 class="font-medium text-white">📄 ${file.name}</h3>
-          <p class="text-xs text-neutral-400 mt-1">${file.path}</p>
-          <div class="mt-3 flex gap-2">
-            <a class="px-3 py-1 rounded-lg bg-white text-neutral-900 text-sm" href="${raw}" target="_blank" rel="noreferrer">Apri/Scarica</a>
-            <a class="px-3 py-1 rounded-lg border border-neutral-700 text-sm" href="${blob}" target="_blank" rel="noreferrer">Vedi su GitHub</a>
-          </div>
-        </article>
-      `;
+    function getCheckedExts(){
+      return Array.from(document.querySelectorAll(".filter-ext:checked")).map(i=>i.value.toLowerCase());
     }
 
-    async function loadGroup(group, ref) {
-      const target = document.getElementById(group.targetEl);
-      const empty  = document.getElementById(group.emptyEl);
-      target.innerHTML = "";
-      empty.classList.add("hidden");
+    function applyFilters(files){
+      const q = searchEl.value.trim().toLowerCase();
+      const allowed = new Set(getCheckedExts());
+      return files.filter(f => allowed.has(extOf(f.name)) && (!q || f.name.toLowerCase().includes(q)));
+    }
 
-      let found = [];
-      let logs = [];
+    async function loadGroup(group, ref){
+      const target = el(group.targetEl), empty=el(group.emptyEl);
+      target.innerHTML=""; empty.classList.add("hidden");
+      const logs=[]; let found=[];
 
-      for (const basePath of group.paths) {
-        try {
+      for(const basePath of group.paths){
+        try{
           const items = await listRecursive(basePath, ref, group.exts);
-          logs.push(`SCAN ${basePath || "<root>"}@${ref} -> ${items.length} file`);
-          found = found.concat(items.filter(group.classifier));
-        } catch (e) {
+          logs.push(`SCAN ${basePath}@${ref} -> ${items.length} file`);
+          found = found.concat(items);
+        }catch(e){
           logs.push(`ERR ${basePath}@${ref}: ${e && e.message ? e.message : e}`);
         }
       }
+      // Dedup per path
+      const uniq=[]; const seen=new Set();
+      for(const f of found){ if(!seen.has(f.path)){ seen.add(f.path); uniq.push(f); } }
+      const filtered = applyFilters(uniq);
 
-      // dedup per path
-      const uniq = [];
-      const seen = new Set();
-      for (const f of found) {
-        if (seen.has(f.path)) continue;
-        seen.add(f.path);
-        uniq.push(f);
-      }
-
-      if (uniq.length === 0) {
-        empty.classList.remove("hidden");
-      } else {
-        target.innerHTML = uniq
-          .sort((a,b)=> a.name.localeCompare(b.name))
-          .map(f => card(f, ref))
-          .join("");
-      }
+      if(filtered.length===0) empty.classList.remove("hidden");
+      else target.innerHTML = filtered.sort((a,b)=>a.name.localeCompare(b.name)).map(f=>card(f, ref)).join("");
 
       return logs.join("\n");
     }
 
-    async function loadAll(ref) {
-      statusEl.textContent = "Caricamento…";
-      debugEl.textContent = "";
-      const logs = [];
-      for (const g of GROUPS) {
-        const l = await loadGroup(g, ref);
-        logs.push(`== ${g.title} ==\n${l}\n`);
-      }
-      statusEl.textContent = "Fatto.";
-      debugEl.textContent = logs.join("\n");
+    async function loadAll(ref){
+      statusEl.textContent="Caricamento…";
+      const logs=[];
+      for(const g of GROUPS){ logs.push(`== ${g.title} ==\n` + await loadGroup(g, ref)); }
+      statusEl.textContent="Fatto.";
+      debugEl.textContent=logs.join("\n\n");
     }
 
+    // handlers
+    branchSel.value = DEFAULT_BRANCH;
+    reloadBtn.addEventListener("click", ()=>loadAll(branchSel.value));
+    searchEl.addEventListener("input", ()=>loadAll(branchSel.value));
+    clearSearchEl.addEventListener("click", ()=>{searchEl.value=""; loadAll(branchSel.value);});
+    document.querySelectorAll(".filter-ext").forEach(cb=>cb.addEventListener("change",()=>loadAll(branchSel.value)));
+
+    // boot
     loadAll(branchSel.value);
   </script>
 </body>
 </html>
+
 

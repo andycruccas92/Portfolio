@@ -7,7 +7,7 @@ Questa repository raccoglie **documenti, white paper, template e mappe di proces
 - **Theory of Constraints (TOC)**
 - **Quality & Risk Management (ISO 9001, FSC, ecc.)**
 - **Continuous Improvement & Operational Excellence**
-- **Design e Project Management in contesti luxury e industriali**
+- **Design e Project Management**
 
 ---
 

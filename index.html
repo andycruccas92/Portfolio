@@ -128,6 +128,244 @@
   // 1) Scopri default branch
   const repoInfo = await fetch(api(`/repos/${OWNER}/${REPO}`)).then(r=>r.json());
   const DEFAULT_BRANCH = repoInfo.default_branch || 'main';
-  br
+  branchEl.textContent = `branch: ${DEFAULT_BRANCH}`;
 
+  // 2) Carica struttura completa (ricorsivo)
+  async function listDir(path=""){
+    const url = api(`/repos/${OWNER}/${REPO}/contents/${path}?ref=${DEFAULT_BRANCH}`);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`GitHub API error ${res.status}`);
+    const items = await res.json();
+    // Ordina: dir prima, poi file, alfabetico
+    items.sort((a,b)=>{
+      if (a.type!==b.type) return a.type==="dir"?-1:1;
+      return a.name.localeCompare(b.name);
+    });
+    return items;
+  }
 
+  async function buildTree(path="", container){
+    const items = await listDir(path);
+    if (!items.length){
+      const div = document.createElement('div');
+      div.className = 'empty';
+      div.textContent = 'Cartella vuota';
+      container.appendChild(div);
+      return;
+    }
+    count.total += items.length;
+    for (const it of items){
+      const isDir = it.type === 'dir';
+      const node = document.createElement('div');
+      node.className = 'node ' + (isDir? 'folder':'file');
+      node.dataset.path = it.path;
+
+      const row = document.createElement('div');
+      row.className = 'row';
+
+      const twist = document.createElement('div');
+      twist.className = 'twist';
+      twist.textContent = isDir ? '▸' : '';
+
+      const icon = document.createElement('div');
+      icon.className = 'icon';
+      icon.textContent = isDir ? '📁' : fileIcon(it.name);
+
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = it.name;
+
+      const links = document.createElement('div');
+      links.className = 'links';
+      if (!isDir){
+        const rel = encodeURI(it.path);
+        const view = document.createElement('a');
+        view.className='link-chip'; view.textContent='View';
+        view.href = `${pagesBase()}/${rel}`; view.target='_blank'; view.rel='noopener';
+
+        const raw  = document.createElement('a');
+        raw.className='link-chip'; raw.textContent='Raw';
+        raw.href = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${DEFAULT_BRANCH}/${rel}`;
+        raw.target='_blank'; raw.rel='noopener';
+
+        const gh   = document.createElement('a');
+        gh.className='link-chip'; gh.textContent='GitHub';
+        gh.href = `https://github.com/${OWNER}/${REPO}/blob/${DEFAULT_BRANCH}/${rel}`;
+        gh.target='_blank'; gh.rel='noopener';
+
+        links.append(view, raw, gh);
+      }
+
+      row.append(twist, icon, name, links);
+      node.appendChild(row);
+      container.appendChild(node);
+
+      // Click comportamenti
+      if (isDir){
+        const children = document.createElement('div');
+        children.className = 'children';
+        node.appendChild(children);
+
+        const open = async () => {
+          node.classList.toggle('open');
+          twist.textContent = node.classList.contains('open') ? '▾' : '▸';
+          if (!node.dataset.loaded && node.classList.contains('open')){
+            node.dataset.loaded = 'y';
+            await buildTree(it.path, children);
+          }
+          updateBreadcrumb(it.path);
+        };
+        twist.onclick = open;
+        name.onclick  = open;
+        icon.onclick  = open;
+      } else {
+        name.onclick = () => { selectFile(it); updateBreadcrumb(dirName(it.path)); };
+        icon.onclick = () => { selectFile(it); updateBreadcrumb(dirName(it.path)); };
+      }
+    }
+  }
+
+  function updateBreadcrumb(path){
+    const parts = path ? path.split('/') : [];
+    breadEl.innerHTML = '';
+    const root = document.createElement('span');
+    root.className='crumb';
+    const rootA = document.createElement('a'); rootA.href='#'; rootA.textContent='root';
+    rootA.onclick = (e)=>{ e.preventDefault(); scrollToTop(); };
+    root.appendChild(rootA);
+    breadEl.appendChild(root);
+
+    let built = '';
+    parts.forEach((p,i)=>{
+      const sep = document.createElement('span'); sep.className='crumb sep'; sep.textContent='›';
+      breadEl.appendChild(sep);
+      built += (i?'/':'') + p;
+      const c = document.createElement('span'); c.className='crumb';
+      const a = document.createElement('a'); a.href='#'; a.textContent=p;
+      a.onclick = (e)=>{ e.preventDefault(); highlightFolder(built); };
+      c.appendChild(a);
+      breadEl.appendChild(c);
+    });
+  }
+
+  function highlightFolder(path){
+    // Try to open folders along the path
+    const segments = path ? path.split('/') : [];
+    let acc = '';
+    for (let i=0;i<segments.length;i++){
+      acc += (i?'/':'') + segments[i];
+      const el = treeEl.querySelector(`.node.folder[data-path="${cssEsc(acc)}"]`);
+      if (el && !el.classList.contains('open')){
+        el.querySelector('.twist').click();
+      }
+    }
+    const target = treeEl.querySelector(`.node.folder[data-path="${cssEsc(path)}"]`);
+    if (target) target.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+
+  function scrollToTop(){ window.scrollTo({top:0, behavior:'smooth'}); }
+
+  function fileIcon(name){
+    const n = name.toLowerCase();
+    if (n.endsWith('.md')) return '📝';
+    if (n.endsWith('.png')||n.endsWith('.jpg')||n.endsWith('.jpeg')||n.endsWith('.gif')||n.endsWith('.webp')) return '🖼️';
+    if (n.endsWith('.pdf')) return '📄';
+    if (n.endsWith('.zip')||n.endsWith('.rar')||n.endsWith('.7z')) return '🗜️';
+    if (n.endsWith('.html')||n.endsWith('.css')||n.endsWith('.js')||n.endsWith('.ts')) return '💻';
+    if (n.endsWith('.xlsx')||n.endsWith('.xls')||n.endsWith('.csv')) return '📊';
+    if (n.endsWith('.doc')||n.endsWith('.docx')) return '📃';
+    return '📄';
+  }
+
+  function dirName(p){ const i=p.lastIndexOf('/'); return i>0 ? p.slice(0,i) : ''; }
+
+  // 3) Ricerca client-side
+  qEl.addEventListener('input', () => {
+    const term = qEl.value.trim().toLowerCase();
+    for (const node of treeEl.querySelectorAll('.node')){
+      const name = node.querySelector('.name')?.textContent.toLowerCase() || '';
+      const match = !term || name.includes(term);
+      node.style.display = match ? '' : 'none';
+      // auto-open parents when searching
+      if (term && match){
+        let cur = node;
+        while (cur){
+          if (cur.classList?.contains('folder')){
+            cur.classList.add('open');
+            const twist = cur.querySelector('.twist'); if (twist) twist.textContent='▾';
+          }
+          cur = cur.parentElement?.closest?.('.node.folder') || null;
+        }
+      }
+    }
+  });
+
+  // 4) Espandi/Comprimi tutto
+  document.getElementById('expandAll').onclick = async () => {
+    for (const f of treeEl.querySelectorAll('.node.folder')){
+      if (!f.classList.contains('open')) f.querySelector('.twist').click();
+      // Se non ancora caricati, attende un tick
+      await new Promise(r=>setTimeout(r, 15));
+    }
+  };
+  document.getElementById('collapseAll').onclick = () => {
+    for (const f of treeEl.querySelectorAll('.node.folder.open')){
+      f.classList.remove('open');
+      const t = f.querySelector('.twist'); if (t) t.textContent='▸';
+    }
+    updateBreadcrumb('');
+  };
+
+  // 5) Dettaglio file (mostra snippet per testo/markdown)
+  async function selectFile(item){
+    const ext = item.name.toLowerCase().split('.').pop();
+    const rawUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${DEFAULT_BRANCH}/${encodeURI(item.path)}`;
+    let html = `<h2 style="margin:0 0 8px 0">${escapeHtml(item.name)}</h2>
+      <div style="margin-bottom:12px">
+        <a class="link-chip" href="${pagesBase()}/${encodeURI(item.path)}" target="_blank" rel="noopener">View</a>
+        <a class="link-chip" href="${rawUrl}" target="_blank" rel="noopener">Raw</a>
+        <a class="link-chip" href="https://github.com/${OWNER}/${REPO}/blob/${DEFAULT_BRANCH}/${encodeURI(item.path)}" target="_blank" rel="noopener">GitHub</a>
+      </div>`;
+
+    // Anteprima veloce solo per file di testo "piccoli"
+    const textlike = ['md','txt','json','yaml','yml','xml','html','css','js','ts'];
+    if (textlike.includes(ext)){
+      try{
+        const txt = await fetch(rawUrl).then(r=>r.text());
+        const preview = txt.length>4000 ? txt.slice(0,4000) + "\n\n… (troncato)" : txt;
+        html += `<div class="code"><pre>${escapeHtml(preview)}</pre></div>`;
+      }catch(e){
+        html += `<div class="empty">Impossibile caricare l’anteprima.</div>`;
+      }
+    } else {
+      html += `<div class="empty">Nessuna anteprima disponibile per questo formato.</div>`;
+    }
+    document.getElementById('details').innerHTML = `<div class="readme">${html}<div id="readme"></div></div>`;
+  }
+
+  // 6) Carica README.md in root, se presente
+  async function loadReadme(){
+    try{
+      const rd = await fetch(api(`/repos/${OWNER}/${REPO}/readme?ref=${DEFAULT_BRANCH}`)).then(r=>r.ok?r.json():null);
+      if (!rd) return;
+      const txt = await fetch(rd.download_url).then(r=>r.text());
+      readmeBox.innerHTML = `
+        <h2>README.md</h2>
+        <div class="code"><pre>${escapeHtml(txt)}</pre></div>
+      `;
+    }catch(e){}
+  }
+
+  // 7) Helpers
+  const count = { total: 0 };
+  function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+  function cssEsc(s){ return CSS && CSS.escape ? CSS.escape(s) : s.replace(/"/g,'\\"'); }
+
+  // Avvio
+  await buildTree("", treeEl);
+  await loadReadme();
+  countEl.textContent = `${count.total} items`;
+})();
+</script>
+</body>
+</html>
